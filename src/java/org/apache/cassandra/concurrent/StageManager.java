@@ -20,6 +20,8 @@ package org.apache.cassandra.concurrent;
 import java.util.EnumMap;
 import java.util.concurrent.*;
 
+import org.apache.cassandra.config.DatabaseDescriptor;
+import org.apache.cassandra.net.PriorityComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +41,8 @@ public class StageManager
 {
     private static final Logger logger = LoggerFactory.getLogger(StageManager.class);
 
+    public static final boolean BRBENABLED = DatabaseDescriptor.getBRBEnabled();
+
     private static final EnumMap<Stage, TracingAwareExecutorService> stages = new EnumMap<Stage, TracingAwareExecutorService>(Stage.class);
 
     public static final long KEEPALIVE = 60; // seconds to keep "extra" threads alive for when idle
@@ -47,6 +51,11 @@ public class StageManager
     {
         stages.put(Stage.MUTATION, multiThreadedLowSignalStage(Stage.MUTATION, getConcurrentWriters()));
         stages.put(Stage.COUNTER_MUTATION, multiThreadedLowSignalStage(Stage.COUNTER_MUTATION, getConcurrentCounterWriters()));
+        stages.put(Stage.COUNTER_MUTATION, multiThreadedLowSignalStage(Stage.COUNTER_MUTATION, getConcurrentCounterWriters()));
+        if(BRBENABLED)
+            stages.put(Stage.READ, multiThreadedLowSignalStageBRB(Stage.READ, getConcurrentReaders()));
+        else
+            stages.put(Stage.READ, multiThreadedLowSignalStage(Stage.READ, getConcurrentReaders()));
         stages.put(Stage.READ, multiThreadedLowSignalStage(Stage.READ, getConcurrentReaders()));
         stages.put(Stage.REQUEST_RESPONSE, multiThreadedLowSignalStage(Stage.REQUEST_RESPONSE, FBUtilities.getAvailableProcessors()));
         stages.put(Stage.INTERNAL_RESPONSE, multiThreadedStage(Stage.INTERNAL_RESPONSE, FBUtilities.getAvailableProcessors()));
@@ -90,6 +99,16 @@ public class StageManager
     private static TracingAwareExecutorService multiThreadedLowSignalStage(Stage stage, int numThreads)
     {
         return SharedExecutorPool.SHARED.newExecutor(numThreads, Integer.MAX_VALUE, stage.getJmxType(), stage.getJmxName());
+    }
+
+    private static TracingAwareExecutorService multiThreadedLowSignalStageBRB(Stage stage, int numThreads)
+    {
+        //FIXME (waleed): Setting max capacity to arbitrarily high value
+        return SharedExecutorPool.SHARED.newExecutor(numThreads,
+                Integer.MAX_VALUE,
+                stage.getJmxType(),
+                stage.getJmxName(),
+                new PriorityBlockingQueue<AbstractTracingAwareExecutorService.FutureTask<?>>(5000, new PriorityComparator()));
     }
 
     /**

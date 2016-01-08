@@ -1789,4 +1789,14 @@ public class DatabaseDescriptor
         return conf.gc_warn_threshold_in_ms;
     }
 
+    public static boolean getBRBEnabled()
+    {
+        return conf.brb_enabled;
+    }
+
+    public static void setBRBEnabled(boolean brb_enabled)
+    {
+        conf.brb_enabled = brb_enabled;
+    }
+
 }

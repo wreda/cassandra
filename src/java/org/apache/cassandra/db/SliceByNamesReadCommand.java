@@ -44,7 +44,9 @@ public class SliceByNamesReadCommand extends ReadCommand
 
     public ReadCommand copy()
     {
-        return new SliceByNamesReadCommand(ksName, key, cfName, timestamp, filter).setIsDigestQuery(isDigestQuery());
+        ReadCommand newCommand = new SliceByNamesReadCommand(ksName, key, cfName, timestamp, filter).setIsDigestQuery(isDigestQuery());
+        newCommand.setPriority(this.getPriority());
+        return newCommand;
     }
 
     public Row getRow(Keyspace keyspace)
@@ -78,6 +80,7 @@ class SliceByNamesReadCommandSerializer implements IVersionedSerializer<ReadComm
         SliceByNamesReadCommand command = (SliceByNamesReadCommand) cmd;
         out.writeBoolean(command.isDigestQuery());
         out.writeUTF(command.ksName);
+        out.writeDouble(command.getPriority());
         ByteBufferUtil.writeWithShortLength(command.key, out);
         out.writeUTF(command.cfName);
         out.writeLong(cmd.timestamp);
@@ -90,6 +93,7 @@ class SliceByNamesReadCommandSerializer implements IVersionedSerializer<ReadComm
     {
         boolean isDigest = in.readBoolean();
         String keyspaceName = in.readUTF();
+        double priority = in.readDouble();
         ByteBuffer key = ByteBufferUtil.readWithShortLength(in);
         String cfName = in.readUTF();
         long timestamp = in.readLong();
@@ -102,7 +106,9 @@ class SliceByNamesReadCommandSerializer implements IVersionedSerializer<ReadComm
             throw new UnknownColumnFamilyException(message, null);
         }
         NamesQueryFilter filter = metadata.comparator.namesQueryFilterSerializer().deserialize(in, version);
-        return new SliceByNamesReadCommand(keyspaceName, key, cfName, timestamp, filter).setIsDigestQuery(isDigest);
+        ReadCommand newCommand = new SliceByNamesReadCommand(keyspaceName, key, cfName, timestamp, filter).setIsDigestQuery(isDigest);
+        newCommand.setPriority(priority);
+        return newCommand;
     }
 
     public long serializedSize(ReadCommand cmd, int version)
@@ -115,6 +121,7 @@ class SliceByNamesReadCommandSerializer implements IVersionedSerializer<ReadComm
         CFMetaData metadata = Schema.instance.getCFMetaData(cmd.ksName, cmd.cfName);
 
         size += sizes.sizeof(command.ksName);
+        size += sizes.sizeof((long)command.getPriority());
         size += sizes.sizeof((short)keySize) + keySize;
         size += sizes.sizeof(command.cfName);
         size += sizes.sizeof(cmd.timestamp);

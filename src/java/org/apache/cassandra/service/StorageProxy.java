@@ -1364,18 +1364,48 @@ public class StorageProxy implements StorageProxyMBean
             List<ReadCommand> commands = commandsToRetry.isEmpty() ? initialCommands : commandsToRetry;
             AbstractReadExecutor[] readExecutors = new AbstractReadExecutor[commands.size()];
 
+            HashMap<InetAddress, ArrayList<AbstractReadExecutor>> replicaGroupReqs = new HashMap<InetAddress, ArrayList<AbstractReadExecutor>>();
+
+            int maxReqCount = 0;
+            InetAddress maxReqRG = null;
+
             if (!commandsToRetry.isEmpty())
                 Tracing.trace("Retrying {} commands", commandsToRetry.size());
 
-            // send out read requests
+            // calculate read counts per RG and create executors
             for (int i = 0; i < commands.size(); i++)
             {
                 ReadCommand command = commands.get(i);
                 assert !command.isDigestQuery();
 
                 AbstractReadExecutor exec = AbstractReadExecutor.getReadExecutor(command, consistencyLevel);
-                exec.executeAsync();
+                //exec.executeAsync();
                 readExecutors[i] = exec;
+                InetAddress rg = exec.handler.endpoints.get(0);
+                if(!replicaGroupReqs.containsKey(rg))
+                    replicaGroupReqs.put(rg, new ArrayList<AbstractReadExecutor>());
+                replicaGroupReqs.get(rg).add(exec);
+                if(replicaGroupReqs.get(rg).size()>maxReqCount)
+                {
+                    maxReqCount = replicaGroupReqs.get(rg).size();
+                    maxReqRG = rg;
+                }
+            }
+
+            logger.trace("[BRB] maxReqCount for all replica groups: " + maxReqCount);
+
+            // execute read operations
+            for (InetAddress rg: replicaGroupReqs.keySet())
+            {
+                float uniformIncrCost = (maxReqCount * 0.6f) / replicaGroupReqs.get(rg).size();
+                long uniformDeadline = System.currentTimeMillis();
+                for (AbstractReadExecutor exec: replicaGroupReqs.get(rg))
+                {
+                            // FIXME only EqualMaxCost is implemented
+                                    uniformDeadline += uniformIncrCost;
+                    exec.command.setPriority(uniformDeadline);
+                    exec.executeAsync();
+                }
             }
 
             for (AbstractReadExecutor exec : readExecutors)
@@ -1521,7 +1551,7 @@ public class StorageProxy implements StorageProxyMBean
         return rows;
     }
 
-    static class LocalReadRunnable extends DroppableRunnable
+    static class LocalReadRunnable extends DroppableRunnable implements PriorityProvider
     {
         private final ReadCommand command;
         private final ReadCallback<ReadResponse, Row> handler;
@@ -1553,9 +1583,15 @@ public class StorageProxy implements StorageProxyMBean
                     throw t;
             }
         }
+
+        @Override
+        public PriorityTuple getPriority()
+        {
+            return PriorityTuple.create(command.getPriority(), this.constructionTimeMillis);
+        }
     }
 
-    static class LocalRangeSliceRunnable extends DroppableRunnable
+    static class LocalRangeSliceRunnable extends DroppableRunnable implements PriorityProvider
     {
         private final AbstractRangeCommand command;
         private final ReadCallback<RangeSliceReply, Iterable<Row>> handler;
@@ -1584,6 +1620,12 @@ public class StorageProxy implements StorageProxyMBean
                 else
                     throw t;
             }
+        }
+
+        @Override
+        public PriorityTuple getPriority()
+        {
+            return PriorityTuple.create((double)this.constructionTimeMillis, this.constructionTimeMillis);
         }
     }
 
@@ -2167,7 +2209,8 @@ public class StorageProxy implements StorageProxyMBean
      */
     private static abstract class DroppableRunnable implements Runnable
     {
-        private final long constructionTime = System.nanoTime();
+        protected final long constructionTime = System.nanoTime();
+        protected final long constructionTimeMillis = System.currentTimeMillis();
         private final MessagingService.Verb verb;
 
         public DroppableRunnable(MessagingService.Verb verb)

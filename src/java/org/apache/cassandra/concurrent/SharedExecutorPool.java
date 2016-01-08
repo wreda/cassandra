@@ -19,11 +19,13 @@ package org.apache.cassandra.concurrent;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.cassandra.concurrent.AbstractTracingAwareExecutorService.FutureTask;
 import static org.apache.cassandra.concurrent.SEPWorker.Work;
 
 /**
@@ -106,6 +108,13 @@ public class SharedExecutorPool
     public TracingAwareExecutorService newExecutor(int maxConcurrency, int maxQueuedTasks, String jmxPath, String name)
     {
         SEPExecutor executor = new SEPExecutor(this, maxConcurrency, maxQueuedTasks, jmxPath, name);
+        executors.add(executor);
+        return executor;
+    }
+
+    public TracingAwareExecutorService newExecutor(int maxConcurrency, int maxQueuedTasks, String jmxPath, String name, Queue<FutureTask<?>> queue)
+    {
+        SEPExecutor executor = new SEPExecutor(this, maxConcurrency, maxQueuedTasks, jmxPath, name, queue);
         executors.add(executor);
         return executor;
     }

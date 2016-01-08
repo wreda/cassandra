@@ -63,6 +63,7 @@ public abstract class ReadCommand implements IReadCommand, Pageable
     public final String ksName;
     public final String cfName;
     public final ByteBuffer key;
+    public double priority; //BRB: Used for server-side scheduling
     public final long timestamp;
     private boolean isDigestQuery = false;
     protected final Type commandType;
@@ -127,6 +128,17 @@ public abstract class ReadCommand implements IReadCommand, Pageable
     {
         return DatabaseDescriptor.getReadRpcTimeout();
     }
+
+    public void setPriority(double priority)
+    {
+        this.priority = priority;
+    }
+
+    public double getPriority()
+    {
+        return this.priority;
+    }
+
 }
 
 class ReadCommandSerializer implements IVersionedSerializer<ReadCommand>

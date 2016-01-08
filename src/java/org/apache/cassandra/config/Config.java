@@ -240,6 +240,8 @@ public class Config
 
     public int gc_warn_threshold_in_ms = 0;
 
+    public boolean brb_enabled=true;
+
     private static final CsvPreference STANDARD_SURROUNDING_SPACES_NEED_QUOTES = new CsvPreference.Builder(CsvPreference.STANDARD_PREFERENCE)
                                                                                                   .surroundingSpacesNeedQuotes(true).build();
 

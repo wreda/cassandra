@@ -20,6 +20,7 @@ package org.apache.cassandra.net;
 import java.io.IOException;
 import java.util.EnumSet;
 
+import org.apache.cassandra.db.ReadCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,7 @@ import org.apache.cassandra.db.filter.TombstoneOverwhelmingException;
 import org.apache.cassandra.db.index.IndexNotAvailableException;
 import org.apache.cassandra.gms.Gossiper;
 
-public class MessageDeliveryTask implements Runnable
+public class MessageDeliveryTask implements Runnable, PriorityProvider
 {
     private static final Logger logger = LoggerFactory.getLogger(MessageDeliveryTask.class);
 
@@ -85,6 +86,15 @@ public class MessageDeliveryTask implements Runnable
         if (GOSSIP_VERBS.contains(message.verb))
             Gossiper.instance.setLastProcessedMessageAt(constructionTime);
     }
+
+    @Override
+    public PriorityTuple getPriority()
+    {
+        if(this.message.payload instanceof ReadCommand)
+                return PriorityTuple.create(((ReadCommand)this.message.payload).getPriority(), this.constructionTime);
+        else
+            return PriorityTuple.create((double)this.constructionTime, this.constructionTime);
+     }
 
     private void handleFailure(Throwable t)
     {

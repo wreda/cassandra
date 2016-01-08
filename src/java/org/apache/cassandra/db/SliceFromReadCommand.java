@@ -53,7 +53,9 @@ public class SliceFromReadCommand extends ReadCommand
 
     public ReadCommand copy()
     {
-        return new SliceFromReadCommand(ksName, key, cfName, timestamp, filter).setIsDigestQuery(isDigestQuery());
+        ReadCommand newCommand = new SliceFromReadCommand(ksName, key, cfName, timestamp, filter).setIsDigestQuery(isDigestQuery());
+        newCommand.setPriority(this.getPriority());
+        return newCommand;
     }
 
     public Row getRow(Keyspace keyspace)
@@ -161,6 +163,7 @@ class SliceFromReadCommandSerializer implements IVersionedSerializer<ReadCommand
         SliceFromReadCommand realRM = (SliceFromReadCommand)rm;
         out.writeBoolean(realRM.isDigestQuery());
         out.writeUTF(realRM.ksName);
+        out.writeDouble(rm.getPriority());
         ByteBufferUtil.writeWithShortLength(realRM.key, out);
         out.writeUTF(realRM.cfName);
         out.writeLong(realRM.timestamp);
@@ -173,6 +176,7 @@ class SliceFromReadCommandSerializer implements IVersionedSerializer<ReadCommand
         boolean isDigest = in.readBoolean();
         String keyspaceName = in.readUTF();
         ByteBuffer key = ByteBufferUtil.readWithShortLength(in);
+        double priority = in.readDouble();
         String cfName = in.readUTF();
         long timestamp = in.readLong();
         CFMetaData metadata = Schema.instance.getCFMetaData(keyspaceName, cfName);
@@ -184,7 +188,9 @@ class SliceFromReadCommandSerializer implements IVersionedSerializer<ReadCommand
             throw new UnknownColumnFamilyException(message, null);
         }
         SliceQueryFilter filter = metadata.comparator.sliceQueryFilterSerializer().deserialize(in, version);
-        return new SliceFromReadCommand(keyspaceName, key, cfName, timestamp, filter).setIsDigestQuery(isDigest);
+        ReadCommand newCommand = new SliceFromReadCommand(keyspaceName, key, cfName, timestamp, filter).setIsDigestQuery(isDigest);
+        newCommand.setPriority(priority);
+        return newCommand;
     }
 
     public long serializedSize(ReadCommand cmd, int version)
@@ -197,6 +203,7 @@ class SliceFromReadCommandSerializer implements IVersionedSerializer<ReadCommand
 
         int size = sizes.sizeof(cmd.isDigestQuery()); // boolean
         size += sizes.sizeof(command.ksName);
+        size += sizes.sizeof((long)command.getPriority());
         size += sizes.sizeof((short) keySize) + keySize;
         size += sizes.sizeof(command.cfName);
         size += sizes.sizeof(cmd.timestamp);

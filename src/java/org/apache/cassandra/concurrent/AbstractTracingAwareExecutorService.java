@@ -26,6 +26,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.cassandra.net.PriorityProvider;
+import org.apache.cassandra.net.PriorityTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,11 +144,12 @@ public abstract class AbstractTracingAwareExecutorService implements TracingAwar
         }
     }
 
-    class FutureTask<T> extends SimpleCondition implements Future<T>, Runnable
+    public class FutureTask<T> extends SimpleCondition implements Future<T>, Runnable, PriorityProvider
     {
         private boolean failure;
         private Object result = this;
         private final Callable<T> callable;
+        private Runnable runnable = null;
 
         public FutureTask(Callable<T> callable)
         {
@@ -155,6 +158,7 @@ public abstract class AbstractTracingAwareExecutorService implements TracingAwar
         public FutureTask(Runnable runnable, T result)
         {
             this(Executors.callable(runnable, result));
+            this.runnable = runnable;
         }
 
         public void run()
@@ -208,6 +212,15 @@ public abstract class AbstractTracingAwareExecutorService implements TracingAwar
             if (failure)
                 throw new ExecutionException((Throwable) result);
             return (T) result;
+        }
+
+        @Override
+        public PriorityTuple getPriority() {
+            System.out.println("Getting priority of value: " + ((PriorityProvider) runnable).getPriority());
+            if(runnable != null && runnable instanceof PriorityProvider)
+                return ((PriorityProvider) runnable).getPriority();
+            else
+                throw new UnsupportedOperationException();
         }
     }
 

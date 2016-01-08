@@ -871,3 +871,6 @@ enable_user_defined_functions: false
 # below their system default. The sysinternals 'clockres' tool can confirm your system's default
 # setting.
 windows_timer_interval: 1
+
+# BRB Configuration
+brb_enabled: true

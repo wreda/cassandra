@@ -19,6 +19,7 @@ package org.apache.cassandra.concurrent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,8 +51,10 @@ public class SEPExecutor extends AbstractTracingAwareExecutorService
     volatile boolean shuttingDown = false;
     final SimpleCondition shutdown = new SimpleCondition();
 
+    private String jmxPath;
     // TODO: see if other queue implementations might improve throughput
-    protected final ConcurrentLinkedQueue<FutureTask<?>> tasks = new ConcurrentLinkedQueue<>();
+    // TODO (Waleed): Evaluate efficiency of PriorityBlockingQueue vs ConcurrentLinkedQueue
+    protected Queue<FutureTask<?>> tasks;
 
     SEPExecutor(SharedExecutorPool pool, int maxWorkers, int maxTasksQueued, String jmxPath, String name)
     {
@@ -60,6 +63,19 @@ public class SEPExecutor extends AbstractTracingAwareExecutorService
         this.maxTasksQueued = maxTasksQueued;
         this.permits.set(combine(0, maxWorkers));
         this.metrics = new SEPMetrics(this, jmxPath, name);
+        this.tasks = new ConcurrentLinkedQueue<>();
+        this.jmxPath = jmxPath;
+    }
+
+    SEPExecutor(SharedExecutorPool pool, int maxWorkers, int maxTasksQueued, String jmxPath, String name, Queue<FutureTask<?>> tasks)
+    {
+        this.pool = pool;
+        this.maxWorkers = maxWorkers;
+        this.maxTasksQueued = maxTasksQueued;
+        this.permits.set(combine(0, maxWorkers));
+        this.metrics = new SEPMetrics(this, jmxPath, name);
+        this.tasks = tasks;
+        this.jmxPath = jmxPath;
     }
 
     protected void onCompletion()
@@ -80,6 +96,7 @@ public class SEPExecutor extends AbstractTracingAwareExecutorService
 
     protected void addTask(FutureTask<?> task)
     {
+        System.out.println("For stage " + this.jmxPath + " queue is of type " + tasks.getClass());
         // we add to the queue first, so that when a worker takes a task permit it can be certain there is a task available
         // this permits us to schedule threads non-spuriously; it also means work is serviced fairly
         tasks.add(task);
