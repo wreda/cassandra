@@ -96,7 +96,6 @@ public class SEPExecutor extends AbstractTracingAwareExecutorService
 
     protected void addTask(FutureTask<?> task)
     {
-        System.out.println("For stage " + this.jmxPath + " queue is of type " + tasks.getClass());
         // we add to the queue first, so that when a worker takes a task permit it can be certain there is a task available
         // this permits us to schedule threads non-spuriously; it also means work is serviced fairly
         tasks.add(task);
