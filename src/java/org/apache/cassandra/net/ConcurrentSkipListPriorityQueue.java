@@ -33,16 +33,17 @@ public class ConcurrentSkipListPriorityQueue<T> implements Queue<T>
     private ConcurrentSkipListMap<T, Boolean> values;
 
     public ConcurrentSkipListPriorityQueue(Comparator<? super T> comparator) {
-        values = new ConcurrentSkipListMap<>(comparator);
+        values = new ConcurrentSkipListMap<T, Boolean>(comparator);
     }
 
     public ConcurrentSkipListPriorityQueue() {
-        values = new ConcurrentSkipListMap<>();
+        values = new ConcurrentSkipListMap<T, Boolean>();
     }
 
     @Override
     public boolean add(T e) {
-        return values.put(e, Boolean.TRUE);
+        values.put(e, Boolean.TRUE);
+        return true;
     }
 
     @Override
