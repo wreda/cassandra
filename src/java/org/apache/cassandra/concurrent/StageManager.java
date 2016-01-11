@@ -21,6 +21,7 @@ import java.util.EnumMap;
 import java.util.concurrent.*;
 
 import org.apache.cassandra.config.DatabaseDescriptor;
+import org.apache.cassandra.net.ConcurrentSkipListPriorityQueue;
 import org.apache.cassandra.net.PriorityComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,7 +107,7 @@ public class StageManager
                 Integer.MAX_VALUE,
                 stage.getJmxType(),
                 stage.getJmxName(),
-                new PriorityBlockingQueue<AbstractTracingAwareExecutorService.FutureTask<?>>(5000, new PriorityComparator()));
+                new ConcurrentSkipListPriorityQueue<AbstractTracingAwareExecutorService.FutureTask<?>>(new PriorityComparator()));
     }
 
     /**

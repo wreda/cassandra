@@ -58,7 +58,7 @@ public class SEPExecutor extends AbstractTracingAwareExecutorService
 
     private String jmxPath;
     // TODO: see if other queue implementations might improve throughput
-    // TODO (Waleed): Evaluate efficiency of PriorityBlockingQueue vs ConcurrentLinkedQueue
+    // TODO (Waleed): Evaluate efficiency of ConcurrentSkipListPriorityQueue vs PriorityBlockingQueue vs ConcurrentLinkedQueue
     protected Queue<FutureTask<?>> tasks;
 
     private boolean test = false;
