@@ -63,7 +63,7 @@ public abstract class ReadCommand implements IReadCommand, Pageable
     public final String ksName;
     public final String cfName;
     public final ByteBuffer key;
-    public double priority; //BRB: Used for server-side scheduling
+    public double priority=0; //BRB: Used for server-side scheduling
     public final long timestamp;
     private boolean isDigestQuery = false;
     protected final Type commandType;

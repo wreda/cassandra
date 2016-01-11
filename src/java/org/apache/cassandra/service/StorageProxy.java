@@ -1401,8 +1401,8 @@ public class StorageProxy implements StorageProxyMBean
                 long uniformDeadline = System.currentTimeMillis();
                 for (AbstractReadExecutor exec: replicaGroupReqs.get(rg))
                 {
-                            // FIXME only EqualMaxCost is implemented
-                                    uniformDeadline += uniformIncrCost;
+                    // FIXME only UniformIncr is implemented
+                    uniformDeadline += uniformIncrCost;
                     exec.command.setPriority(uniformDeadline);
                     exec.executeAsync();
                 }

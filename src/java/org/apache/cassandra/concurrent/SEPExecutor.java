@@ -25,6 +25,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.cassandra.metrics.SEPMetrics;
 import org.apache.cassandra.utils.concurrent.SimpleCondition;
 import org.apache.cassandra.utils.concurrent.WaitQueue;
@@ -33,6 +36,8 @@ import static org.apache.cassandra.concurrent.SEPWorker.Work;
 
 public class SEPExecutor extends AbstractTracingAwareExecutorService
 {
+    private static final Logger logger = LoggerFactory.getLogger(SEPExecutor.class);
+
     private final SharedExecutorPool pool;
 
     public final int maxWorkers;
@@ -56,8 +61,11 @@ public class SEPExecutor extends AbstractTracingAwareExecutorService
     // TODO (Waleed): Evaluate efficiency of PriorityBlockingQueue vs ConcurrentLinkedQueue
     protected Queue<FutureTask<?>> tasks;
 
+    private boolean test = false;
+
     SEPExecutor(SharedExecutorPool pool, int maxWorkers, int maxTasksQueued, String jmxPath, String name)
     {
+        logger.info("Creating Threadpool " + name);
         this.pool = pool;
         this.maxWorkers = maxWorkers;
         this.maxTasksQueued = maxTasksQueued;
@@ -69,6 +77,7 @@ public class SEPExecutor extends AbstractTracingAwareExecutorService
 
     SEPExecutor(SharedExecutorPool pool, int maxWorkers, int maxTasksQueued, String jmxPath, String name, Queue<FutureTask<?>> tasks)
     {
+        logger.info("Creating Threadpool " + name + " [BRB]");
         this.pool = pool;
         this.maxWorkers = maxWorkers;
         this.maxTasksQueued = maxTasksQueued;
@@ -76,6 +85,7 @@ public class SEPExecutor extends AbstractTracingAwareExecutorService
         this.metrics = new SEPMetrics(this, jmxPath, name);
         this.tasks = tasks;
         this.jmxPath = jmxPath;
+        this.test = true;
     }
 
     protected void onCompletion()
@@ -96,6 +106,9 @@ public class SEPExecutor extends AbstractTracingAwareExecutorService
 
     protected void addTask(FutureTask<?> task)
     {
+        //logger.info("Adding task in the following Threadpool " + this.jmxPath);
+        //if(test)
+        //    logger.info("Scheduling task with priority: "+task.getPriority());
         // we add to the queue first, so that when a worker takes a task permit it can be certain there is a task available
         // this permits us to schedule threads non-spuriously; it also means work is serviced fairly
         tasks.add(task);

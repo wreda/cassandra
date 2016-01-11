@@ -216,7 +216,7 @@ public abstract class AbstractTracingAwareExecutorService implements TracingAwar
 
         @Override
         public PriorityTuple getPriority() {
-            System.out.println("Getting priority of value: " + ((PriorityProvider) runnable).getPriority());
+            //System.out.println("Getting priority of value: " + ((PriorityProvider) runnable).getPriority());
             if(runnable != null && runnable instanceof PriorityProvider)
                 return ((PriorityProvider) runnable).getPriority();
             else
