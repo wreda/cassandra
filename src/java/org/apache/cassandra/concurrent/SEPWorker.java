@@ -108,6 +108,9 @@ final class SEPWorker extends AtomicReference<SEPWorker.Work> implements Runnabl
                     // if we're shutting down, or we fail to take a permit, we don't perform any more work
                     if ((shutdown = assigned.shuttingDown) || !assigned.takeTaskPermit())
                         break;
+
+                    //if(assigned.tasks.isEmpty())
+                    //    System.out.println("Queues Empty: " + assigned.tasks.isEmpty());
                     task = assigned.tasks.poll();
                 }
 

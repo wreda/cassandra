@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.cassandra.metrics.SEPMetrics;
+import org.apache.cassandra.net.MultiConcurrentLinkedPriorityQueue;
 import org.apache.cassandra.utils.concurrent.SimpleCondition;
 import org.apache.cassandra.utils.concurrent.WaitQueue;
 
@@ -83,7 +84,9 @@ public class SEPExecutor extends AbstractTracingAwareExecutorService
         this.maxTasksQueued = maxTasksQueued;
         this.permits.set(combine(0, maxWorkers));
         this.metrics = new SEPMetrics(this, jmxPath, name);
-        this.tasks = tasks;
+        //Testing Multiqueues
+        //this.tasks = tasks;
+        this.tasks = new MultiConcurrentLinkedPriorityQueue<>();
         this.jmxPath = jmxPath;
         this.test = true;
     }
