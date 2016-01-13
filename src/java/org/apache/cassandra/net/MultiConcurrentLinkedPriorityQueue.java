@@ -64,7 +64,7 @@ public class MultiConcurrentLinkedPriorityQueue<E> extends AbstractQueue<E>
     }
 
     @Override
-    public E poll() {
+    public synchronized E poll() {
         int choice = r.nextInt(qcount);
         for(int i=0; i<qcount; i++)
         {

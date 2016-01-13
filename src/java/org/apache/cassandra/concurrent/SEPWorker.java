@@ -102,8 +102,6 @@ final class SEPWorker extends AtomicReference<SEPWorker.Work> implements Runnabl
                     assigned.maybeSchedule();
 
                     // we know there is work waiting, as we have a work permit, so poll() will always succeed
-                    if(task == null)
-                        break;
                     task.run();
                     task = null;
 
@@ -115,7 +113,7 @@ final class SEPWorker extends AtomicReference<SEPWorker.Work> implements Runnabl
                     //    System.out.println("Queues Empty: " + assigned.tasks.isEmpty());
                     task = assigned.tasks.poll();
                 }
-                shutdown = assigned.shuttingDown;
+
                 // return our work permit, and maybe signal shutdown
                 assigned.returnWorkPermit();
                 if (shutdown && assigned.getActiveCount() == 0)
