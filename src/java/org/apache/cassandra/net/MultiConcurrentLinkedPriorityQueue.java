@@ -26,17 +26,25 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.apache.cassandra.concurrent.AbstractTracingAwareExecutorService;
+
 /**
  * Created by reda on 12/01/16.
  */
 public class MultiConcurrentLinkedPriorityQueue<E> extends AbstractQueue<E>
 {
     Random r;
-    final int qcount = 3;
+    int qcount;
     List<ConcurrentLinkedQueue<E>> queues;
+    List<Integer> weights;
+    int weightSum;
 
-    public MultiConcurrentLinkedPriorityQueue()
+    public MultiConcurrentLinkedPriorityQueue(List<Integer> weights)
     {
+        qcount = weights.size();
+        for (Integer x: weights)
+            weightSum += x;
+        this.weights = weights;
         r =  new Random();
         queues = new ArrayList<ConcurrentLinkedQueue<E>>();
         for (int i=0; i<qcount; i++)
@@ -65,12 +73,25 @@ public class MultiConcurrentLinkedPriorityQueue<E> extends AbstractQueue<E>
 
     @Override
     public synchronized E poll() {
-        int choice = r.nextInt(qcount);
-        for(int i=0; i<qcount; i++)
+        //TODO: It might be better to iteratively poll directly instead of peeking (and if non-null return)
+        //Which approach is more expensive computationally (compared to synchronization)?
+        boolean searching = false;
+        int choice = r.nextInt(weightSum);
+        int acc = 0;
+        for (int i = 0; i < qcount; i++)
         {
-            if(queues.get(choice).peek() != null)
-                return queues.get(choice).poll();
-            choice = (choice+1)%qcount;
+            acc += weights.get(i);
+            if (acc >= (choice - 1) && queues.get(i).peek() != null)
+                return queues.get(i).poll();
+            else
+            {
+                for (int j = 0; j < qcount; j++)
+                {
+                    if(queues.get(j).peek() != null)
+                        return queues.get(j).poll();
+                }
+                return null;
+            }
         }
         return null;
     }
@@ -107,6 +128,17 @@ public class MultiConcurrentLinkedPriorityQueue<E> extends AbstractQueue<E>
     public boolean offer(E key) {
         if (key == null)
             throw new NullPointerException();
+        if(key instanceof AbstractTracingAwareExecutorService.FutureTask<?>)
+        {
+            PriorityTuple priority = ((AbstractTracingAwareExecutorService.FutureTask<?>)key).getPriority();
+            int chosenWeight = priority.left.intValue();
+            int choice = weights.indexOf(chosenWeight);
+            if(choice != -1)
+            {
+                queues.get(choice).offer(key);
+                return true;
+            }
+        }
         int choice = r.nextInt(qcount);
         queues.get(choice).offer(key);
         return true;

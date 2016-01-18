@@ -1799,4 +1799,14 @@ public class DatabaseDescriptor
         conf.brb_enabled = brb_enabled;
     }
 
+    public static List<Integer> getQueueWeights()
+    {
+        return conf.queueWeights;
+    }
+
+    public static void setQueueWeights(List<Integer> queueWeights)
+    {
+        conf.queueWeights = queueWeights;
+    }
+
 }

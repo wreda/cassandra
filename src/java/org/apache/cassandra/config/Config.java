@@ -20,6 +20,7 @@ package org.apache.cassandra.config;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -241,6 +242,8 @@ public class Config
     public int gc_warn_threshold_in_ms = 0;
 
     public boolean brb_enabled=true;
+
+    public List<Integer> queueWeights = Arrays.asList(10, 8, 6, 3, 1);
 
     private static final CsvPreference STANDARD_SURROUNDING_SPACES_NEED_QUOTES = new CsvPreference.Builder(CsvPreference.STANDARD_PREFERENCE)
                                                                                                   .surroundingSpacesNeedQuotes(true).build();

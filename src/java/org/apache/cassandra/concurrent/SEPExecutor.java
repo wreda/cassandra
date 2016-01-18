@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.metrics.SEPMetrics;
 import org.apache.cassandra.net.MultiConcurrentLinkedPriorityQueue;
 import org.apache.cassandra.utils.concurrent.SimpleCondition;
@@ -86,7 +87,7 @@ public class SEPExecutor extends AbstractTracingAwareExecutorService
         this.metrics = new SEPMetrics(this, jmxPath, name);
         //Testing Multiqueues
         //this.tasks = tasks;
-        this.tasks = new MultiConcurrentLinkedPriorityQueue<>();
+        this.tasks = new MultiConcurrentLinkedPriorityQueue<>(DatabaseDescriptor.getQueueWeights());
         this.jmxPath = jmxPath;
         this.test = true;
     }

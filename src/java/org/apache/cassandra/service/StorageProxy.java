@@ -63,6 +63,7 @@ import org.apache.cassandra.service.paxos.*;
 import org.apache.cassandra.tracing.Tracing;
 import org.apache.cassandra.triggers.TriggerExecutor;
 import org.apache.cassandra.utils.*;
+import org.apache.pig.builtin.mock.Storage;
 
 public class StorageProxy implements StorageProxyMBean
 {
@@ -1393,20 +1394,43 @@ public class StorageProxy implements StorageProxyMBean
             }
 
             logger.trace("[BRB] maxReqCount for all replica groups: " + maxReqCount);
+            List<Integer> queueWeights = DatabaseDescriptor.getQueueWeights();
 
             // execute read operations
             for (InetAddress rg: replicaGroupReqs.keySet())
             {
-                float uniformIncrCost = (maxReqCount * 0.6f) / replicaGroupReqs.get(rg).size();
-                long uniformDeadline = System.currentTimeMillis();
-                for (AbstractReadExecutor exec: replicaGroupReqs.get(rg))
+                float maxWeight = Collections.max(queueWeights);
+                float priority = maxWeight;
+                float minError = Float.MAX_VALUE; //set min error to arbitrary high value
+                if (maxReqRG != rg)
                 {
-                    // FIXME only UniformIncr is implemented
-                    uniformDeadline += uniformIncrCost;
-                    exec.command.setPriority(uniformDeadline);
+                    for(Integer qw: queueWeights)
+                    {
+                        //Search for weights that minimize distance
+                        float error = Math.abs((float)replicaGroupReqs.get(rg).size()/maxReqCount - qw/maxWeight);
+                        if(error < minError)
+                        {
+                            minError = error;
+                            priority = qw;
+                        }
+                    }
+                }
+                for (AbstractReadExecutor exec : replicaGroupReqs.get(rg))
+                {
+                    exec.command.setPriority(priority);
                     exec.executeAsync();
                 }
             }
+
+
+                //float uniformIncrCost = (maxReqCount * 0.6f) / replicaGroupReqs.get(rg).size();
+                //long uniformDeadline = System.currentTimeMillis();
+                //for (AbstractReadExecutor exec: replicaGroupReqs.get(rg))
+                //{
+                //    // FIXME only UniformIncr is implemented
+                //    uniformDeadline += uniformIncrCost;
+                //    exec.command.setPriority(uniformDeadline);
+                //    exec.executeAsync();
 
             for (AbstractReadExecutor exec : readExecutors)
                 exec.maybeTryAdditionalReplicas();
