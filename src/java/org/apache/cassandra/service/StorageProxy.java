@@ -1395,11 +1395,11 @@ public class StorageProxy implements StorageProxyMBean
 
             logger.trace("[BRB] maxReqCount for all replica groups: " + maxReqCount);
             List<Integer> queueWeights = DatabaseDescriptor.getQueueWeights();
+            float maxWeight = Collections.max(queueWeights);
 
             // execute read operations
             for (InetAddress rg: replicaGroupReqs.keySet())
             {
-                float maxWeight = Collections.max(queueWeights);
                 float priority = maxWeight;
                 float minError = Float.MAX_VALUE; //set min error to arbitrary high value
                 if (maxReqRG != rg)

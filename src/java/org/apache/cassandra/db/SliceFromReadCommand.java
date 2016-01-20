@@ -31,6 +31,7 @@ import org.apache.cassandra.db.filter.IDiskAtomFilter;
 import org.apache.cassandra.db.filter.QueryFilter;
 import org.apache.cassandra.db.filter.SliceQueryFilter;
 import org.apache.cassandra.io.IVersionedSerializer;
+import org.apache.cassandra.io.util.DataOutputBuffer;
 import org.apache.cassandra.io.util.DataOutputPlus;
 import org.apache.cassandra.service.RowDataResolver;
 import org.apache.cassandra.service.StorageService;
@@ -163,7 +164,7 @@ class SliceFromReadCommandSerializer implements IVersionedSerializer<ReadCommand
         SliceFromReadCommand realRM = (SliceFromReadCommand)rm;
         out.writeBoolean(realRM.isDigestQuery());
         out.writeUTF(realRM.ksName);
-        //out.writeDouble(rm.getPriority());
+        out.writeDouble(rm.getPriority());
         ByteBufferUtil.writeWithShortLength(realRM.key, out);
         out.writeUTF(realRM.cfName);
         out.writeLong(realRM.timestamp);
@@ -175,8 +176,8 @@ class SliceFromReadCommandSerializer implements IVersionedSerializer<ReadCommand
     {
         boolean isDigest = in.readBoolean();
         String keyspaceName = in.readUTF();
+        double  priority = in.readDouble();
         ByteBuffer key = ByteBufferUtil.readWithShortLength(in);
-        //double priority = in.readDouble();
         String cfName = in.readUTF();
         long timestamp = in.readLong();
         CFMetaData metadata = Schema.instance.getCFMetaData(keyspaceName, cfName);
@@ -189,7 +190,7 @@ class SliceFromReadCommandSerializer implements IVersionedSerializer<ReadCommand
         }
         SliceQueryFilter filter = metadata.comparator.sliceQueryFilterSerializer().deserialize(in, version);
         ReadCommand newCommand = new SliceFromReadCommand(keyspaceName, key, cfName, timestamp, filter).setIsDigestQuery(isDigest);
-        //newCommand.setPriority(priority);
+        newCommand.setPriority(priority);
         return newCommand;
     }
 
