@@ -87,7 +87,7 @@ public class SEPExecutor extends AbstractTracingAwareExecutorService
         this.metrics = new SEPMetrics(this, jmxPath, name);
         //Testing Multiqueues
         //this.tasks = tasks;
-        this.tasks = new MultiConcurrentLinkedPriorityQueue<>(DatabaseDescriptor.getQueueWeights());
+        this.tasks = tasks;
         this.jmxPath = jmxPath;
         this.test = true;
     }

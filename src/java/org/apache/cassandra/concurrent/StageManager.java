@@ -18,10 +18,12 @@
 package org.apache.cassandra.concurrent;
 
 import java.util.EnumMap;
+import java.util.Queue;
 import java.util.concurrent.*;
 
 import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.net.ConcurrentSkipListPriorityQueue;
+import org.apache.cassandra.net.MultiConcurrentLinkedPriorityQueue;
 import org.apache.cassandra.net.PriorityComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.cassandra.net.MessagingService;
 import org.apache.cassandra.tracing.TraceState;
 import org.apache.cassandra.utils.FBUtilities;
+import org.apache.pig.builtin.mock.Storage;
 
 import static org.apache.cassandra.config.DatabaseDescriptor.*;
 
@@ -102,12 +105,26 @@ public class StageManager
 
     private static TracingAwareExecutorService multiThreadedLowSignalStageBRB(Stage stage, int numThreads)
     {
-        //FIXME (waleed): Setting max capacity to arbitrarily high value
+        logger.info("Using " + DatabaseDescriptor.getQueueType() + " structure for reads");
+        Queue<AbstractTracingAwareExecutorService.FutureTask<?>> q;
+        if(DatabaseDescriptor.getQueueType().equals("multiqueue"))
+        {
+            q = new MultiConcurrentLinkedPriorityQueue<AbstractTracingAwareExecutorService.FutureTask<?>>(DatabaseDescriptor.getQueueWeights());
+        }
+        else if(DatabaseDescriptor.getQueueType().equals("priority"))
+        {
+            q = new ConcurrentSkipListPriorityQueue<AbstractTracingAwareExecutorService.FutureTask<?>>(new PriorityComparator());
+        }
+        else
+        {
+            q = new ConcurrentLinkedQueue<AbstractTracingAwareExecutorService.FutureTask<?>>();
+        }
+
         return SharedExecutorPool.SHARED.newExecutor(numThreads,
                 Integer.MAX_VALUE,
                 stage.getJmxType(),
                 stage.getJmxName(),
-                new ConcurrentSkipListPriorityQueue<AbstractTracingAwareExecutorService.FutureTask<?>>(new PriorityComparator()));
+                q);
     }
 
     /**

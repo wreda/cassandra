@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.apache.log4j.Priority;
+
 import org.apache.cassandra.concurrent.AbstractTracingAwareExecutorService;
 
 /**
@@ -78,19 +80,23 @@ public class MultiConcurrentLinkedPriorityQueue<E> extends AbstractQueue<E>
         boolean searching = false;
         int choice = r.nextInt(weightSum);
         int acc = 0;
+        //System.out.println(choice);
         for (int i = 0; i < qcount; i++)
         {
             acc += weights.get(i);
-            if (acc >= (choice - 1) && queues.get(i).peek() != null)
-                return queues.get(i).poll();
-            else
+            if (acc >= (choice + 1))
             {
-                for (int j = 0; j < qcount; j++)
+                if (queues.get(i).peek() != null)
+                    return queues.get(i).poll();
+                else
                 {
-                    if(queues.get(j).peek() != null)
-                        return queues.get(j).poll();
+                    for (int j = 0; j < qcount; j++)
+                    {
+                        if (queues.get(j).peek() != null)
+                            return queues.get(j).poll();
+                    }
+                    return null;
                 }
-                return null;
             }
         }
         return null;
@@ -128,9 +134,9 @@ public class MultiConcurrentLinkedPriorityQueue<E> extends AbstractQueue<E>
     public boolean offer(E key) {
         if (key == null)
             throw new NullPointerException();
-        if(key instanceof AbstractTracingAwareExecutorService.FutureTask<?>)
+        if(key instanceof PriorityProvider)
         {
-            PriorityTuple priority = ((AbstractTracingAwareExecutorService.FutureTask<?>)key).getPriority();
+            PriorityTuple priority = ((PriorityProvider)key).getPriority();
             int chosenWeight = priority.left.intValue();
             int choice = weights.indexOf(chosenWeight);
             if(choice != -1)

@@ -1397,29 +1397,84 @@ public class StorageProxy implements StorageProxyMBean
             List<Integer> queueWeights = DatabaseDescriptor.getQueueWeights();
             float maxWeight = Collections.max(queueWeights);
 
+            //Get queue for bottleneck subtask if we're using hybrid priority strategy
+            //Otherwise, assume that bottleneck subtask goes to the queue with the highest weight
+            if(DatabaseDescriptor.getPriorityStrategy().equals("hybrid") && DatabaseDescriptor.getQueueType().equals("multiqueue"))
+            {
+                int range = DatabaseDescriptor.getInitialQueueRange();
+                for(Integer qw : queueWeights)
+                {
+                    if(maxReqCount <= range)
+                    {
+                        maxWeight = qw;
+                        break;
+                    }
+                    range = range * DatabaseDescriptor.getQueueRangeFactor();
+                }
+            }
+
             // execute read operations
             for (InetAddress rg: replicaGroupReqs.keySet())
             {
-                float priority = maxWeight;
-                float minError = Float.MAX_VALUE; //set min error to arbitrary high value
-                if (maxReqRG != rg)
+                if(DatabaseDescriptor.getQueueType().equals("multiqueue") && DatabaseDescriptor.getBRBEnabled())
                 {
-                    for(Integer qw: queueWeights)
+                    float priority = maxWeight;
+                    if (maxReqRG != rg)
                     {
-                        //Search for weights that minimize distance
-                        float error = Math.abs((float)replicaGroupReqs.get(rg).size()/maxReqCount - qw/maxWeight);
-                        if(error < minError)
+                        float minError = Float.MAX_VALUE; //set min error to arbitrary high value
+                        for (Integer qw : queueWeights)
                         {
-                            minError = error;
-                            priority = qw;
+                            //Search for weights that minimize distance
+                            float error = Math.abs((float) replicaGroupReqs.get(rg).size() / maxReqCount - qw / maxWeight);
+                            if (error < minError && qw <= maxWeight)
+                            {
+                                minError = error;
+                                priority = qw;
+                            }
+                        }
+                    }
+
+
+                    for (AbstractReadExecutor exec : replicaGroupReqs.get(rg))
+                    {
+                        exec.command.setPriority(priority);
+                        exec.executeAsync();
+                    }
+
+                }
+                else if(DatabaseDescriptor.getQueueType().equals("priority") && DatabaseDescriptor.getBRBEnabled())
+                {
+                    if(DatabaseDescriptor.getPriorityStrategy().equals("uniformIncr"))
+                    {
+                        float uniformIncrCost = (maxReqCount * 0.6f) / replicaGroupReqs.get(rg).size();
+                        long uniformDeadline = System.currentTimeMillis();
+                        for (AbstractReadExecutor exec: replicaGroupReqs.get(rg))
+                        {
+                            uniformDeadline += uniformIncrCost;
+                            exec.command.setPriority(uniformDeadline);
+                            exec.executeAsync();
+                        }
+                    }
+
+                    else if(DatabaseDescriptor.getPriorityStrategy().equals("equalMax"))
+                    {
+                        float priority = replicaGroupReqs.get(rg).size();
+                        for (AbstractReadExecutor exec: replicaGroupReqs.get(rg))
+                        {
+                            exec.command.setPriority(priority);
+                            exec.executeAsync();
                         }
                     }
                 }
-                for (AbstractReadExecutor exec : replicaGroupReqs.get(rg))
+                else
                 {
-                    exec.command.setPriority(priority);
-                    exec.executeAsync();
+                    logger.info(DatabaseDescriptor.getQueueType());
+                    for (AbstractReadExecutor exec: replicaGroupReqs.get(rg))
+                    {
+                        exec.executeAsync();
+                    }
                 }
+
             }
 
 

@@ -1799,6 +1799,17 @@ public class DatabaseDescriptor
         conf.brb_enabled = brb_enabled;
     }
 
+    public static String getPriorityStrategy()
+    {
+        return conf.priority_strategy;
+    }
+
+    public static void setPriorityStrategy(String priority_strategy) { conf.priority_strategy = priority_strategy; }
+
+    public static String getQueueType() {return conf.queue_type; }
+
+    public static void setQueueType(String queue_type) {conf.queue_type = queue_type; }
+
     public static List<Integer> getQueueWeights()
     {
         return conf.queueWeights;
@@ -1808,5 +1819,13 @@ public class DatabaseDescriptor
     {
         conf.queueWeights = queueWeights;
     }
+
+    public static int getInitialQueueRange() { return conf.initial_queue_range; }
+
+    public static void setInitialQueueRange(int initial_queue_range) { conf.initial_queue_range = initial_queue_range; }
+
+    public static int getQueueRangeFactor() { return conf.queue_range_factor; }
+
+    public static void setQueueRangeFactor(int queue_range_factor) { conf.queue_range_factor = queue_range_factor; }
 
 }

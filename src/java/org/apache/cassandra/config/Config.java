@@ -243,7 +243,15 @@ public class Config
 
     public boolean brb_enabled=true;
 
+    public String priority_strategy="hybrid";
+
+    public String queue_type="multiqueue";
+
     public List<Integer> queueWeights = Arrays.asList(10, 8, 6, 3, 1);
+
+    public int initial_queue_range = 5;
+
+    public int queue_range_factor = 5;
 
     private static final CsvPreference STANDARD_SURROUNDING_SPACES_NEED_QUOTES = new CsvPreference.Builder(CsvPreference.STANDARD_PREFERENCE)
                                                                                                   .surroundingSpacesNeedQuotes(true).build();

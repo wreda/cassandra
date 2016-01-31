@@ -874,3 +874,7 @@ windows_timer_interval: 1
 
 # BRB Configuration
 brb_enabled: true
+queue_type: multiqueue
+priority_strategy: hybrid
+initial_queue_range: 5
+queue_range_factor: 5
