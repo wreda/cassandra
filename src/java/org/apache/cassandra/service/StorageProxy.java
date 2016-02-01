@@ -1468,7 +1468,7 @@ public class StorageProxy implements StorageProxyMBean
                 }
                 else
                 {
-                    logger.info(DatabaseDescriptor.getQueueType());
+                    //logger.info(DatabaseDescriptor.getQueueType());
                     for (AbstractReadExecutor exec: replicaGroupReqs.get(rg))
                     {
                         exec.executeAsync();
