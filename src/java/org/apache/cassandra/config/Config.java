@@ -253,6 +253,8 @@ public class Config
 
     public int queue_range_factor = 5;
 
+    public float slack_error_comp = 1.0f;
+
     private static final CsvPreference STANDARD_SURROUNDING_SPACES_NEED_QUOTES = new CsvPreference.Builder(CsvPreference.STANDARD_PREFERENCE)
                                                                                                   .surroundingSpacesNeedQuotes(true).build();
 

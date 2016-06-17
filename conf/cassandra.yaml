@@ -878,3 +878,4 @@ queue_type: multiqueue
 priority_strategy: hybrid
 initial_queue_range: 5
 queue_range_factor: 5
+slack_error_comp: 2.5f

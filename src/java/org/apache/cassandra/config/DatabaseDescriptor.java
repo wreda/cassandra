@@ -1828,4 +1828,8 @@ public class DatabaseDescriptor
 
     public static void setQueueRangeFactor(int queue_range_factor) { conf.queue_range_factor = queue_range_factor; }
 
+    public static float getSlackErrorCompensation() { return conf.slack_error_comp; }
+
+    public static void setSlackErrorCompensation(float slack_error_comp) { conf.slack_error_comp = slack_error_comp; }
+
 }
