@@ -1046,12 +1046,12 @@ public class StorageProxy implements StorageProxyMBean
                                                                  handler.consistencyLevel,
                                                                  true);
                 out.writeInt(id);
-                logger.trace("Adding FWD message to {}@{}", id, destination);
+                //logger.trace("Adding FWD message to {}@{}", id, destination);
             }
             message = message.withParameter(Mutation.FORWARD_TO, out.getData());
             // send the combined message + forward headers
             int id = MessagingService.instance().sendRR(message, target, handler, true);
-            logger.trace("Sending message to {}@{}", id, target);
+            //logger.trace("Sending message to {}@{}", id, target);
         }
         catch (IOException e)
         {
@@ -1383,6 +1383,8 @@ public class StorageProxy implements StorageProxyMBean
                 //exec.executeAsync();
                 readExecutors[i] = exec;
                 InetAddress rg = exec.handler.endpoints.get(0);
+                if(Tracing.isTracing())
+                    logger.trace("[SendOp] {} {} {} {}", System.currentTimeMillis(), command.getBatchId(), new String(command.key.array()), rg);
                 if(!replicaGroupReqs.containsKey(rg))
                     replicaGroupReqs.put(rg, new ArrayList<AbstractReadExecutor>());
                 replicaGroupReqs.get(rg).add(exec);
@@ -1392,8 +1394,9 @@ public class StorageProxy implements StorageProxyMBean
                     maxReqRG = rg;
                 }
             }
-
-            logger.trace("[BRB] maxReqCount for all replica groups: " + maxReqCount);
+            //if(Tracing.isTracing())
+            //    logger.trace("[BRB] maxReqCount for all replica groups: " + maxReqCount);
+            
             List<Integer> queueWeights = DatabaseDescriptor.getQueueWeights();
             float maxWeight = Collections.max(queueWeights);
 

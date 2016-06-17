@@ -22,6 +22,8 @@ import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -35,14 +37,19 @@ import org.apache.cassandra.concurrent.AbstractTracingAwareExecutorService;
  */
 public class MultiConcurrentLinkedPriorityQueue<E> extends AbstractQueue<E>
 {
+    Float ALPHA = 0.7f;
     Random r;
     int qcount;
     List<ConcurrentLinkedQueue<E>> queues;
+    Map<E, Long> entryTime;
+    Map<ConcurrentLinkedQueue<E>, Long> waitingTimes;
     List<Integer> weights;
     int weightSum;
 
     public MultiConcurrentLinkedPriorityQueue(List<Integer> weights)
     {
+        entryTime = new HashMap<E, Long>();
+        waitingTimes = new HashMap<ConcurrentLinkedQueue<E>, Long>();
         qcount = weights.size();
         for (Integer x: weights)
             weightSum += x;
@@ -87,13 +94,20 @@ public class MultiConcurrentLinkedPriorityQueue<E> extends AbstractQueue<E>
             if (acc >= (choice + 1))
             {
                 if (queues.get(i).peek() != null)
+                {
+                    Long et = entryTime.get(queues.get(i).peek());
+                    //waitingTime = System.currentTimeMillis() - et;
+                    //owt = waitingTimes.get(queues.get(i));
                     return queues.get(i).poll();
+                }
                 else
                 {
                     for (int j = 0; j < qcount; j++)
                     {
                         if (queues.get(j).peek() != null)
+                        {
                             return queues.get(j).poll();
+                        }
                     }
                     return null;
                 }
@@ -147,6 +161,7 @@ public class MultiConcurrentLinkedPriorityQueue<E> extends AbstractQueue<E>
         }
         int choice = r.nextInt(qcount);
         queues.get(choice).offer(key);
+        entryTime.put(key, System.currentTimeMillis());
         return true;
     }
 

@@ -64,6 +64,7 @@ public abstract class ReadCommand implements IReadCommand, Pageable
     public final String cfName;
     public final ByteBuffer key;
     public double priority=0; //BRB: Used for server-side scheduling
+    public long batchId; //BRB: Used to identify an operation's initiating query (collisions can be avoided by jointly using the timestamp)
     public final long timestamp;
     private boolean isDigestQuery = false;
     protected final Type commandType;
@@ -137,6 +138,16 @@ public abstract class ReadCommand implements IReadCommand, Pageable
     public double getPriority()
     {
         return this.priority;
+    }
+
+    public void setBatchId(long batchId)
+    {
+        this.batchId = batchId;
+    }
+
+    public long getBatchId()
+    {
+        return this.batchId;
     }
 
 }

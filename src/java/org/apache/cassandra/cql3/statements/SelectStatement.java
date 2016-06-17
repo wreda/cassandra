@@ -18,6 +18,7 @@
 package org.apache.cassandra.cql3.statements;
 
 import java.nio.ByteBuffer;
+import java.security.SecureRandom;
 import java.util.*;
 
 import com.google.common.base.Objects;
@@ -79,6 +80,8 @@ public class SelectStatement implements CQLStatement
 
     private static final int DEFAULT_COUNT_PAGE_SIZE = 10000;
 
+    private static final Random myRand;
+    private static final SecureRandom mySecureRand;
     private final int boundTerms;
     public final CFMetaData cfm;
     public final Parameters parameters;
@@ -96,6 +99,13 @@ public class SelectStatement implements CQLStatement
 
     // Used by forSelection below
     private static final Parameters defaultParameters = new Parameters(Collections.<ColumnIdentifier.Raw, Boolean>emptyMap(), false, false, false);
+
+    static
+    {
+        mySecureRand = new SecureRandom();
+        long secureInitializer = mySecureRand.nextLong();
+        myRand = new Random(secureInitializer);
+    }
 
     public SelectStatement(CFMetaData cfm,
                            int boundTerms,
@@ -217,9 +227,25 @@ public class SelectStatement implements CQLStatement
         }
         else
         {
-            rows = command instanceof Pageable.ReadCommands
-                 ? StorageProxy.read(((Pageable.ReadCommands)command).commands, options.getConsistency(), state.getClientState())
-                 : StorageProxy.getRangeSlice((RangeSliceCommand)command, options.getConsistency());
+            //rows = command instanceof Pageable.ReadCommands
+            //     ? StorageProxy.read(((Pageable.ReadCommands)command).commands, options.getConsistency(), state.getClientState())
+            //     : StorageProxy.getRangeSlice((RangeSliceCommand)command, options.getConsistency());
+            //FIXME should avoid setting batch IDs if tracing is not enabled
+            if(command instanceof Pageable.ReadCommands)
+            {
+                long batchId = (long)(myRand.nextDouble()*Long.MAX_VALUE);
+                //String logstr = Long.toString(batchId);
+                for(ReadCommand cmd: ((Pageable.ReadCommands)command).commands)
+                {
+                    cmd.setBatchId(batchId);
+                    //logstr += (" " + new String(cmd.key.array()));
+                }
+                //logger.trace("[BatchOp] {} {}", System.currentTimeMillis(), logstr);
+                rows = StorageProxy.read(((Pageable.ReadCommands)command).commands, options.getConsistency(), state.getClientState());
+
+            }
+            else
+                rows = StorageProxy.getRangeSlice((RangeSliceCommand)command, options.getConsistency());
         }
 
         return processResults(rows, options, limit, now);

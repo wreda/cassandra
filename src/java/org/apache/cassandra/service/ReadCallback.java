@@ -72,8 +72,8 @@ public class ReadCallback<TMessage, TResolved> implements IAsyncCallbackWithFail
     public ReadCallback(IResponseResolver<TMessage, TResolved> resolver, ConsistencyLevel consistencyLevel, IReadCommand command, List<InetAddress> filteredEndpoints)
     {
         this(resolver, consistencyLevel, consistencyLevel.blockFor(Keyspace.open(command.getKeyspace())), command, Keyspace.open(command.getKeyspace()), filteredEndpoints);
-        if (logger.isTraceEnabled())
-            logger.trace(String.format("Blockfor is %s; setting up requests to %s", blockfor, StringUtils.join(this.endpoints, ",")));
+        //if (logger.isTraceEnabled())
+        //    logger.trace(String.format("Blockfor is %s; setting up requests to %s", blockfor, StringUtils.join(this.endpoints, ",")));
     }
 
     public ReadCallback(IResponseResolver<TMessage, TResolved> resolver, ConsistencyLevel consistencyLevel, int blockfor, IReadCommand command, Keyspace keyspace, List<InetAddress> endpoints)
@@ -128,6 +128,8 @@ public class ReadCallback<TMessage, TResolved> implements IAsyncCallbackWithFail
 
     public void response(MessageIn<TMessage> message)
     {
+        if(command instanceof ReadCommand && logger.isTraceEnabled())
+            logger.trace("[RespRecv] {} {} {}", System.currentTimeMillis(), ((ReadCommand)command).getBatchId(), new String(((ReadCommand)command).key.array()));
         resolver.preprocess(message);
         int n = waitingFor(message.from)
               ? recievedUpdater.incrementAndGet(this)

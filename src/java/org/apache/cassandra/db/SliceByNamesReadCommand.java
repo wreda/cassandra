@@ -46,6 +46,7 @@ public class SliceByNamesReadCommand extends ReadCommand
     {
         ReadCommand newCommand = new SliceByNamesReadCommand(ksName, key, cfName, timestamp, filter).setIsDigestQuery(isDigestQuery());
         newCommand.setPriority(this.getPriority());
+        newCommand.setBatchId(this.getBatchId());
         return newCommand;
     }
 
@@ -81,6 +82,7 @@ class SliceByNamesReadCommandSerializer implements IVersionedSerializer<ReadComm
         out.writeBoolean(command.isDigestQuery());
         out.writeUTF(command.ksName);
         out.writeDouble(command.getPriority());
+        out.writeLong(command.getBatchId());
         ByteBufferUtil.writeWithShortLength(command.key, out);
         out.writeUTF(command.cfName);
         out.writeLong(cmd.timestamp);
@@ -94,6 +96,7 @@ class SliceByNamesReadCommandSerializer implements IVersionedSerializer<ReadComm
         boolean isDigest = in.readBoolean();
         String keyspaceName = in.readUTF();
         double priority = in.readDouble();
+        long batchId = in.readLong();
         ByteBuffer key = ByteBufferUtil.readWithShortLength(in);
         String cfName = in.readUTF();
         long timestamp = in.readLong();
@@ -108,6 +111,7 @@ class SliceByNamesReadCommandSerializer implements IVersionedSerializer<ReadComm
         NamesQueryFilter filter = metadata.comparator.namesQueryFilterSerializer().deserialize(in, version);
         ReadCommand newCommand = new SliceByNamesReadCommand(keyspaceName, key, cfName, timestamp, filter).setIsDigestQuery(isDigest);
         newCommand.setPriority(priority);
+        newCommand.setBatchId(batchId);
         return newCommand;
     }
 
@@ -122,6 +126,7 @@ class SliceByNamesReadCommandSerializer implements IVersionedSerializer<ReadComm
 
         size += sizes.sizeof(command.ksName);
         size += sizes.sizeof((long)command.getPriority());
+        size += sizes.sizeof((long)command.getBatchId());
         size += sizes.sizeof((short)keySize) + keySize;
         size += sizes.sizeof(command.cfName);
         size += sizes.sizeof(cmd.timestamp);
