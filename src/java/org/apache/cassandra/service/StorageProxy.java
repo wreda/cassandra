@@ -1428,7 +1428,7 @@ public class StorageProxy implements StorageProxyMBean
                             float rgSize = replicaGroupReqs.get(rg).size()*DatabaseDescriptor.getSlackErrorCompensation();
 
                             //Search for weights that minimize distance
-                            float error = Math.abs((float) replicaGroupReqs.get(rg).size() / maxReqCount - qw / maxWeight);
+                            float error = Math.abs(rgSize / maxReqCount - qw / maxWeight);
                             if (error < minError && qw <= maxWeight)
                             {
                                 minError = error;
