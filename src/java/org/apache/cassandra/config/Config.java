@@ -236,6 +236,11 @@ public class Config
     public volatile int tombstone_warn_threshold = 1000;
     public volatile int tombstone_failure_threshold = 100000;
 
+    // C3 parameters
+    public SelectionStrategy score_strategy = SelectionStrategy.default_strategy;
+    public double c3_rate_limiter_max_tokens = 200;
+    public long c3_rate_interval_ms = 20; //ms
+
     public volatile Long index_summary_capacity_in_mb;
     public volatile int index_summary_resize_interval_in_minutes = 60;
 
@@ -382,5 +387,11 @@ public class Config
     public static enum RequestSchedulerId
     {
         keyspace
+    }
+
+    public static enum SelectionStrategy
+    {
+        c3_strategy,
+        default_strategy
     }
 }

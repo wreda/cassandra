@@ -17,12 +17,16 @@
  */
 package org.apache.cassandra.db;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.cassandra.net.IVerbHandler;
 import org.apache.cassandra.net.MessageIn;
 import org.apache.cassandra.net.MessageOut;
 import org.apache.cassandra.net.MessagingService;
 import org.apache.cassandra.service.StorageService;
 import org.apache.cassandra.tracing.Tracing;
+import org.apache.cassandra.c3.C3Metrics;
+import org.apache.cassandra.utils.ByteBufferUtil;
+import org.apache.cassandra.utils.FBUtilities;
 
 public class ReadVerbHandler implements IVerbHandler<ReadCommand>
 {
@@ -33,13 +37,24 @@ public class ReadVerbHandler implements IVerbHandler<ReadCommand>
             throw new RuntimeException("Cannot service reads while bootstrapping!");
         }
 
+        AtomicInteger counter = MessagingService.instance().getPendingRequestsCounter(FBUtilities.getBroadcastAddress());
+        counter.incrementAndGet();
+        long start = System.nanoTime();
+
         ReadCommand command = message.payload;
         Keyspace keyspace = Keyspace.open(command.ksName);
         Row row = command.getRow(keyspace);
 
-        MessageOut<ReadResponse> reply = new MessageOut<ReadResponse>(MessagingService.Verb.REQUEST_RESPONSE,
-                                                                      getResponse(command, row),
-                                                                      ReadResponse.serializer);
+        long serviceTimeInNanos = System.nanoTime() - start;
+        int queueSize = counter.decrementAndGet();
+
+        MessageOut<ReadResponse> reply =
+        new MessageOut<>(MessagingService.Verb.REQUEST_RESPONSE,
+                         getResponse(command, row),
+                         ReadResponse.serializer)
+        .withParameter(C3Metrics.MU, ByteBufferUtil.bytes(serviceTimeInNanos).array())
+        .withParameter(C3Metrics.QSZ, ByteBufferUtil.bytes(queueSize).array());
+
         Tracing.trace("Enqueuing response to {}", message.from);
         MessagingService.instance().sendReply(reply, id, message.from);
     }

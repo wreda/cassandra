@@ -50,11 +50,11 @@ public class ReadCallback<TMessage, TResolved> implements IAsyncCallbackWithFail
 {
     protected static final Logger logger = LoggerFactory.getLogger( ReadCallback.class );
 
+    List<InetAddress> endpoints;
     public final IResponseResolver<TMessage, TResolved> resolver;
     private final SimpleCondition condition = new SimpleCondition();
     final long start;
     final int blockfor;
-    final List<InetAddress> endpoints;
     private final IReadCommand command;
     private final ConsistencyLevel consistencyLevel;
     private static final AtomicIntegerFieldUpdater<ReadCallback> recievedUpdater
