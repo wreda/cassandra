@@ -879,3 +879,8 @@ priority_strategy: hybrid
 initial_queue_range: 5
 queue_range_factor: 5
 slack_error_comp: 2.5f
+
+#C3 Configuration
+# Score strategy when choosing replicas. Use default_strategy or c3_strategy
+dynamic_snitch: true
+score_strategy: default_strategy
