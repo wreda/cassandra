@@ -81,6 +81,7 @@ public abstract class AbstractReadExecutor
 
     void execute()
     {
+        //logger.info(System.currentTimeMillis() + " Sending message to actor " + this);
         ActorRef actor = MessagingService.instance().getActor(handler.endpoints);
         actor.tell(this, null);
     }

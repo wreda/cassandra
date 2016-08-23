@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.cassandra.concurrent.Stage;
 import org.apache.cassandra.concurrent.StageManager;
 import org.apache.cassandra.config.CFMetaData;
+import org.apache.cassandra.config.Config;
 import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.config.Schema;
 import org.apache.cassandra.db.*;
@@ -1469,7 +1470,7 @@ public class StorageProxy implements StorageProxyMBean
                         }
                     }
                 }
-                else
+                else if(DatabaseDescriptor.getScoreStrategy().equals(Config.SelectionStrategy.c3_strategy))
                 {
                     //logger.info(DatabaseDescriptor.getQueueType());
                     for (AbstractReadExecutor exec: replicaGroupReqs.get(rg))
@@ -1478,7 +1479,13 @@ public class StorageProxy implements StorageProxyMBean
                         exec.execute();
                     }
                 }
-
+                else
+                {
+                    for (AbstractReadExecutor exec: replicaGroupReqs.get(rg))
+                    {
+                        exec.executeAsync();
+                    }
+                }
             }
 
 

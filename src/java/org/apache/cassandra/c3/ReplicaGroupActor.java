@@ -29,9 +29,13 @@ import scala.concurrent.duration.Duration;
 
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class ReplicaGroupActor extends UntypedActorWithStash
 {
+    private static final Logger logger = LoggerFactory.getLogger(ReplicaGroupActor.class);
 
     private final Procedure<Object> WAITING_STATE = new Procedure<Object>()
     {
@@ -60,6 +64,7 @@ public class ReplicaGroupActor extends UntypedActorWithStash
     @Override
     public void onReceive(Object msg)
     {
+        //logger.info(System.currentTimeMillis() + " Actor receiving msg: " + msg);
         if (msg instanceof AbstractReadExecutor)
         {
             long durationToWait = (long) ((AbstractReadExecutor) msg).pushRead();
@@ -74,7 +79,7 @@ public class ReplicaGroupActor extends UntypedActorWithStash
 
     private void switchToWaiting(final long durationToWait)
     {
-        System.out.println("Switching to waiting " + durationToWait);
+        logger.info("Switching to waiting " + durationToWait);
         getContext().become(WAITING_STATE, false);
         getContext().system().scheduler().scheduleOnce(
         Duration.create(durationToWait, TimeUnit.NANOSECONDS),

@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.routing.SmallestMailboxPool;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.cassandra.net.MessageIn;
@@ -44,6 +45,7 @@ public class HostTracker
     private static final Logger logger = LoggerFactory.getLogger(HostTracker.class);
     private final Config config = ConfigFactory.parseString("dispatcher {\n" +
                                                             "  type = Dispatcher\n" +
+                                                            //"  mailbox-type = \"akka.dispatch.UnboundedDequeBasedMailbox\"\n" +
                                                             "  executor = \"fork-join-executor\"\n" +
                                                             "  fork-join-executor {\n" +
                                                             "    parallelism-min = 2\n" +
@@ -69,7 +71,8 @@ public class HostTracker
             {
                 if (!actors.containsKey(endpoint))
                 {
-                    actor = actorSystem.actorOf(Props.create(ReplicaGroupActor.class).withDispatcher("dispatcher"), endpoint.getHostName());
+                    //actor = actorSystem.actorOf(Props.create(ReplicaGroupActor.class).withDispatcher("dispatcher"), endpoint.getHostName());
+                    actor = actorSystem.actorOf(new SmallestMailboxPool(5).props(Props.create(ReplicaGroupActor.class).withDispatcher("dispatcher")), endpoint.getHostName());
                     actors.putIfAbsent(endpoint, actor);
                     logger.info("Creating actor for: " + endpoints);
                 }
