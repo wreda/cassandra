@@ -1442,7 +1442,7 @@ public class StorageProxy implements StorageProxyMBean
                     for (AbstractReadExecutor exec : replicaGroupReqs.get(rg))
                     {
                         exec.command.setPriority(priority);
-                        exec.executeAsync();
+                        exec.pushRead();
                     }
 
                 }
@@ -1456,7 +1456,7 @@ public class StorageProxy implements StorageProxyMBean
                         {
                             uniformDeadline += uniformIncrCost;
                             exec.command.setPriority(uniformDeadline);
-                            exec.executeAsync();
+                            exec.pushRead();
                         }
                     }
 
@@ -1466,24 +1466,17 @@ public class StorageProxy implements StorageProxyMBean
                         for (AbstractReadExecutor exec: replicaGroupReqs.get(rg))
                         {
                             exec.command.setPriority(priority);
-                            exec.executeAsync();
+                            exec.pushRead();
                         }
                     }
                 }
-                else if(DatabaseDescriptor.getScoreStrategy().equals(Config.SelectionStrategy.c3_strategy))
+                else
                 {
                     //logger.info(DatabaseDescriptor.getQueueType());
                     for (AbstractReadExecutor exec: replicaGroupReqs.get(rg))
                     {
                         //exec.executeAsync();
-                        exec.execute();
-                    }
-                }
-                else
-                {
-                    for (AbstractReadExecutor exec: replicaGroupReqs.get(rg))
-                    {
-                        exec.executeAsync();
+                        exec.pushRead();
                     }
                 }
             }
