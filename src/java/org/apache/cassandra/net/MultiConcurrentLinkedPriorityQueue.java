@@ -74,7 +74,7 @@ public class MultiConcurrentLinkedPriorityQueue<E> extends AbstractQueue<E>
     }
 
     @Override
-    public synchronized E poll() {
+    public E poll() {
         //TODO: It might be better to iteratively poll directly instead of peeking (and if non-null return)
         //Which approach is more expensive computationally (compared to synchronization)?
         boolean searching = false;
@@ -86,17 +86,11 @@ public class MultiConcurrentLinkedPriorityQueue<E> extends AbstractQueue<E>
             acc += weights.get(i);
             if (acc >= (choice + 1))
             {
-                if (queues.get(i).peek() != null)
-                    return queues.get(i).poll();
+                E operation = queues.get(i).poll();
+                if (operation != null)
+                    return operation;
                 else
-                {
-                    for (int j = 0; j < qcount; j++)
-                    {
-                        if (queues.get(j).peek() != null)
-                            return queues.get(j).poll();
-                    }
-                    return null;
-                }
+                    return poll();
             }
         }
         return null;
