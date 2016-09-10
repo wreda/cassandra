@@ -1400,7 +1400,8 @@ public class StorageProxy implements StorageProxyMBean
 
             //Get queue for bottleneck subtask if we're using hybrid priority strategy
             //Otherwise, assume that bottleneck subtask goes to the queue with the highest weight
-            if(DatabaseDescriptor.getPriorityStrategy().equals("hybrid") && DatabaseDescriptor.getQueueType().equals("multiqueue"))
+            if((DatabaseDescriptor.getPriorityStrategy().equals("hybrid") || DatabaseDescriptor.getPriorityStrategy().equals("SBF"))
+               && DatabaseDescriptor.getQueueType().equals("multiqueue") && DatabaseDescriptor.getBRBEnabled())
             {
                 int range = DatabaseDescriptor.getInitialQueueRange();
                 for(Integer qw : queueWeights)
@@ -1420,20 +1421,23 @@ public class StorageProxy implements StorageProxyMBean
                 if(DatabaseDescriptor.getQueueType().equals("multiqueue") && DatabaseDescriptor.getBRBEnabled())
                 {
                     float priority = maxWeight;
-                    if (maxReqRG != rg)
+                    if(DatabaseDescriptor.getPriorityStrategy().equals("hybrid") || DatabaseDescriptor.getPriorityStrategy().equals("SDS"))
                     {
-                        float minError = Float.MAX_VALUE; //set min error to arbitrary high value
-                        for (Integer qw : queueWeights)
+                        if (maxReqRG != rg)
                         {
-                            //Multiply replica group size by slack error factor
-                            float rgSize = replicaGroupReqs.get(rg).size()*DatabaseDescriptor.getSlackErrorCompensation();
-
-                            //Search for weights that minimize distance
-                            float error = Math.abs(rgSize / maxReqCount - qw / maxWeight);
-                            if (error < minError && qw <= maxWeight)
+                            float minError = Float.MAX_VALUE; //set min error to arbitrary high value
+                            for (Integer qw : queueWeights)
                             {
-                                minError = error;
-                                priority = qw;
+                                //Multiply replica group size by slack error factor
+                                float rgSize = replicaGroupReqs.get(rg).size() * DatabaseDescriptor.getSlackErrorCompensation();
+
+                                //Search for weights that minimize distance
+                                float error = Math.abs(rgSize / maxReqCount - qw / maxWeight);
+                                if (error < minError && qw <= maxWeight)
+                                {
+                                    minError = error;
+                                    priority = qw;
+                                }
                             }
                         }
                     }
