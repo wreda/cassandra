@@ -238,6 +238,7 @@ public class Config
 
     // C3 parameters
     public SelectionStrategy score_strategy = SelectionStrategy.default_strategy;
+    public boolean c3_rate_limiter_enabled = false;
     public double c3_rate_limiter_max_tokens = 200;
     public long c3_rate_interval_ms = 20; //ms
 
@@ -253,6 +254,8 @@ public class Config
     public String queue_type="multiqueue";
 
     public List<Integer> queueWeights = Arrays.asList(10, 8, 6, 3, 1);
+
+    //public List<Integer> queueWeights = Arrays.asList(1, 3, 6, 8, 10);
 
     public int initial_queue_range = 5;
 

@@ -1392,6 +1392,7 @@ public class StorageProxy implements StorageProxyMBean
                     maxReqCount = replicaGroupReqs.get(rg).size();
                     maxReqRG = rg;
                 }
+                exec.command.setBatchSize(initialCommands.size());
             }
 
             logger.trace("[BRB] maxReqCount for all replica groups: " + maxReqCount);
@@ -1474,12 +1475,19 @@ public class StorageProxy implements StorageProxyMBean
                         }
                     }
                 }
-                else
+                else if(DatabaseDescriptor.getScoreStrategy().equals(Config.SelectionStrategy.c3_strategy) &&
+                     DatabaseDescriptor.getC3RateLimiterEnabled())
                 {
-                    //logger.info(DatabaseDescriptor.getQueueType());
                     for (AbstractReadExecutor exec: replicaGroupReqs.get(rg))
                     {
-                        //exec.executeAsync();
+                        //Request execution goes through the akka-based rate limiter
+                        exec.execute();
+                    }
+                }
+                else
+                {
+                    for (AbstractReadExecutor exec: replicaGroupReqs.get(rg))
+                    {
                         exec.pushRead();
                     }
                 }
@@ -1679,6 +1687,12 @@ public class StorageProxy implements StorageProxyMBean
         {
             return PriorityTuple.create(command.getPriority(), this.constructionTimeMillis);
         }
+
+        @Override
+        public int getBatchSize()
+        {
+            return command.getBatchSize();
+        }
     }
 
     static class LocalRangeSliceRunnable extends DroppableRunnable implements PriorityProvider
@@ -1719,6 +1733,12 @@ public class StorageProxy implements StorageProxyMBean
         public PriorityTuple getPriority()
         {
             return PriorityTuple.create((double)this.constructionTimeMillis, this.constructionTimeMillis);
+        }
+
+        @Override
+        public int getBatchSize()
+        {
+            return -1;
         }
     }
 

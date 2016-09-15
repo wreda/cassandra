@@ -351,8 +351,12 @@ public abstract class AbstractReadExecutor
         {
             List<InetAddress> newEndpointList = StorageProxy.getLiveSortedEndpoints(Keyspace.open(command.ksName), command.key);
             int originalSize = handler.endpoints.size();
-            boolean shouldWait = true;
+            boolean shouldWait = false;
             int dataEndpointIndex;
+
+            // If c3's rate-limiter is enabled, we allow requests to be blocked if we hit backpressure
+            if(DatabaseDescriptor.getC3RateLimiterEnabled())
+                shouldWait = true;
 
             // This is our backpressure knob. If we exceed the rate, bail.
             // Every token bucket's tryAcquire() gives us the duration we need

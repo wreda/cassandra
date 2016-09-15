@@ -1837,6 +1837,11 @@ public class DatabaseDescriptor
     public static void setScoreStrategy(Config.SelectionStrategy score_strategy) {
         conf.score_strategy = score_strategy; }
 
+    public static boolean getC3RateLimiterEnabled() { return conf.c3_rate_limiter_enabled;}
+
+    public static void setC3RateLimiterEnabled(boolean c3_rate_limiter_enabled) {
+        conf.c3_rate_limiter_enabled = c3_rate_limiter_enabled; }
+
     public static double getC3RateLimiterMaxTokens() { return conf.c3_rate_limiter_max_tokens; }
 
     public static void setC3RateLimiterMaxTokens(double c3_rate_limiter_max_tokens) {
