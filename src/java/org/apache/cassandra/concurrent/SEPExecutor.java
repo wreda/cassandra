@@ -65,9 +65,12 @@ public class SEPExecutor extends AbstractTracingAwareExecutorService
 
     private boolean test = false;
 
+    private String poolName;
+
     SEPExecutor(SharedExecutorPool pool, int maxWorkers, int maxTasksQueued, String jmxPath, String name)
     {
         logger.info("Creating Threadpool " + name);
+        this.poolName = name;
         this.pool = pool;
         this.maxWorkers = maxWorkers;
         this.maxTasksQueued = maxTasksQueued;
@@ -80,6 +83,7 @@ public class SEPExecutor extends AbstractTracingAwareExecutorService
     SEPExecutor(SharedExecutorPool pool, int maxWorkers, int maxTasksQueued, String jmxPath, String name, Queue<FutureTask<?>> tasks)
     {
         logger.info("Creating Threadpool " + name + " [BRB]");
+        this.poolName = name;
         this.pool = pool;
         this.maxWorkers = maxWorkers;
         this.maxTasksQueued = maxTasksQueued;
@@ -115,6 +119,7 @@ public class SEPExecutor extends AbstractTracingAwareExecutorService
         //    logger.info("Scheduling task with priority: "+task.getPriority());
         // we add to the queue first, so that when a worker takes a task permit it can be certain there is a task available
         // this permits us to schedule threads non-spuriously; it also means work is serviced fairly
+        //logger.info("Adding task to {} of {}", tasks.getClass().getSimpleName(), this.poolName);
         tasks.add(task);
         int taskPermits;
         while (true)

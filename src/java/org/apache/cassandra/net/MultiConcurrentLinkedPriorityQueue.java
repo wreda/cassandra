@@ -28,6 +28,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.log4j.Priority;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.cassandra.concurrent.AbstractTracingAwareExecutorService;
 
 /**
@@ -40,6 +43,7 @@ public class MultiConcurrentLinkedPriorityQueue<E> extends AbstractQueue<E>
     List<ConcurrentLinkedQueue<E>> queues;
     List<Integer> weights;
     int weightSum;
+    private static final Logger logger = LoggerFactory.getLogger(MultiConcurrentLinkedPriorityQueue.class);
 
     public MultiConcurrentLinkedPriorityQueue(List<Integer> weights)
     {
@@ -81,6 +85,40 @@ public class MultiConcurrentLinkedPriorityQueue<E> extends AbstractQueue<E>
         int choice = r.nextInt(weightSum);
         int acc = 0;
         //System.out.println(choice);
+        //logger.info("My choice is {}", choice);
+        for (int i = 0; i < qcount; i++)
+        {
+            acc += weights.get(i);
+            if (acc >= (choice + 1))
+            {
+                E operation = queues.get(i).poll();
+                if (operation != null)
+                {
+                    //logger.info(">>> My choice is {} and I found an item with priority {} and batchSize {}", choice,
+                    // ((PriorityProvider)operation).getPriority(), ((PriorityProvider)operation).getBatchSize());
+                    //logger.info("<<< Exiting queue with priority {} and batchSize {}",
+                    //            ((PriorityProvider)operation).getPriority(), ((PriorityProvider)operation).getBatchSize());
+                    return operation;
+                }
+                else
+                {
+                    //logger.info("My choice is {} and I'm recursively calling poll() [{}]", choice, 1);
+                    return poll();
+                }
+            }
+        }
+        return null;
+    }
+
+    public E poll(int count)
+    {
+        //TODO: It might be better to iteratively poll directly instead of peeking (and if non-null return)
+        //Which approach is more expensive computationally (compared to synchronization)?
+        boolean searching = false;
+        int choice = r.nextInt(weightSum);
+        int acc = 0;
+        //System.out.println(choice);
+        //logger.info("My choice is {}", choice);
         for (int i = 0; i < qcount; i++)
         {
             acc += weights.get(i);
@@ -90,11 +128,20 @@ public class MultiConcurrentLinkedPriorityQueue<E> extends AbstractQueue<E>
                 if (operation != null)
                     return operation;
                 else
-                    return poll();
+                {
+                    count = count + 1;
+                    logger.info("My choice is {} and I'm recursively calling poll() [{}]", choice, count);
+                    return poll(count);
+                }
             }
         }
         return null;
     }
+
+//    @Override
+//    public E poll() {
+//        return queues.get(0).poll();
+//    }
 
     @Override
     public boolean isEmpty()
@@ -131,6 +178,8 @@ public class MultiConcurrentLinkedPriorityQueue<E> extends AbstractQueue<E>
         if(key instanceof PriorityProvider)
         {
             PriorityTuple priority = ((PriorityProvider)key).getPriority();
+            //logger.info(">>> Entering queue with priority {} and batchSize {}",
+            // ((PriorityProvider)key).getPriority(), ((PriorityProvider)key).getBatchSize());
             int chosenWeight = priority.left.intValue();
             int choice = weights.indexOf(chosenWeight);
             if(choice != -1)

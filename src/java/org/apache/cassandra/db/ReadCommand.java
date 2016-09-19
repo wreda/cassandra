@@ -64,6 +64,7 @@ public abstract class ReadCommand implements IReadCommand, Pageable
     public final String cfName;
     public final ByteBuffer key;
     public double priority=0; //BRB: Used for server-side scheduling
+    public int batchSize=-1;
     public final long timestamp;
     private boolean isDigestQuery = false;
     protected final Type commandType;
@@ -138,6 +139,13 @@ public abstract class ReadCommand implements IReadCommand, Pageable
     {
         return this.priority;
     }
+
+    public void setBatchSize(int batchSize)
+    {
+        this.batchSize = batchSize;
+    }
+
+    public int getBatchSize() { return this.batchSize; }
 
 }
 

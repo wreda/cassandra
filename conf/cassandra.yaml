@@ -312,7 +312,7 @@ seed_provider:
 # On the other hand, since writes are almost never IO bound, the ideal
 # number of "concurrent_writes" is dependent on the number of cores in
 # your system; (8 * number_of_cores) is a good rule of thumb.
-concurrent_reads: 32
+concurrent_reads: 2
 concurrent_writes: 32
 concurrent_counter_writes: 32
 
@@ -873,14 +873,15 @@ enable_user_defined_functions: false
 windows_timer_interval: 1
 
 # BRB Configuration
-brb_enabled: false
+brb_enabled: true
 queue_type: multiqueue
-priority_strategy: hybrid
-initial_queue_range: 5
-queue_range_factor: 5
+priority_strategy: SBF
+initial_queue_range: 1
+queue_range_factor: 3
 slack_error_comp: 1.0f
 
 #C3 Configuration
 # Score strategy when choosing replicas. Use default_strategy or c3_strategy
 dynamic_snitch: true
-score_strategy: c3_strategy
+score_strategy: default_strategy
+c3_rate_limiter_enabled: false

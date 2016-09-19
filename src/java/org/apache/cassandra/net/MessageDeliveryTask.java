@@ -96,6 +96,15 @@ public class MessageDeliveryTask implements Runnable, PriorityProvider
             return PriorityTuple.create((double)this.constructionTime, this.constructionTime);
      }
 
+    @Override
+    public int getBatchSize()
+    {
+        if(this.message.payload instanceof ReadCommand)
+            return ((ReadCommand)this.message.payload).getBatchSize();
+        else
+            return -1;
+    }
+
     private void handleFailure(Throwable t)
     {
         if (message.doCallbackOnFailure())

@@ -222,6 +222,15 @@ public abstract class AbstractTracingAwareExecutorService implements TracingAwar
             else
                 throw new UnsupportedOperationException();
         }
+
+        @Override
+        public int getBatchSize() {
+            //System.out.println("Getting priority of value: " + ((PriorityProvider) runnable).getPriority());
+            if(runnable != null && runnable instanceof PriorityProvider)
+                return ((PriorityProvider) runnable).getBatchSize();
+            else
+                throw new UnsupportedOperationException();
+        }
     }
 
     private <T> FutureTask<T> submit(FutureTask<T> task)
