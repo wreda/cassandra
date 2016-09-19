@@ -169,7 +169,7 @@ public class CoalescingStrategies
             if (DEBUG_COALESCING && shouldLogAverage)
             {
                 shouldLogAverage = false;
-                logger.info("{} gap {}μs", this, TimeUnit.NANOSECONDS.toMicros(averageGap));
+                logger.info("{} gap {} microseconds", this, TimeUnit.NANOSECONDS.toMicros(averageGap));
             }
         }
 

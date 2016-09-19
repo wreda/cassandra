@@ -108,7 +108,7 @@ public class OutboundTcpConnection extends Thread
 
         int coalescingWindow = DatabaseDescriptor.getOtcCoalescingWindow();
         if (coalescingWindow != Config.otc_coalescing_window_us_default)
-            logger.info("OutboundTcpConnection coalescing window set to {}μs", coalescingWindow);
+            logger.info("OutboundTcpConnection coalescing window set to {} microseconds", coalescingWindow);
 
         if (coalescingWindow < 0)
             throw new ExceptionInInitializerError(
